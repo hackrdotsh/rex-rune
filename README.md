@@ -36,6 +36,53 @@ It is written in Rust on [Rune](https://github.com/anomalyco/rune) (wgpu/winit, 
 
 ## Build
 
+### Nix / NixOS
+
+With Nix flakes enabled, build or run the packaged client (no separate Rust or
+Zig installation needed):
+
+```sh
+nix build .#rex-linux
+nix run .#rex-linux -- --help
+```
+
+The flake provides `packages.x86_64-linux.rex-linux` and
+`packages.aarch64-linux.rex-linux`, also available as the default package. It
+includes the desktop launcher, icons, and Wayland/X11 runtime libraries.
+
+To install declaratively on NixOS, add the input to your system flake:
+
+```nix
+inputs.rex-linux.url = "github:shuv1337/rex-rune";
+```
+
+Pass `inputs` through `specialArgs` in your `nixpkgs.lib.nixosSystem` call, then
+add this to a NixOS module:
+
+```nix
+{ inputs, pkgs, ... }:
+{
+  environment.systemPackages = [
+    inputs.rex-linux.packages.${pkgs.stdenv.hostPlatform.system}.rex-linux
+  ];
+}
+```
+
+The same package can go in Home Manager's `home.packages` (pass `inputs` through
+`extraSpecialArgs`). For a per-user profile install instead:
+
+```sh
+nix profile install github:shuv1337/rex-rune#rex-linux
+```
+
+A graphical session and a separately managed Rex server are still required.
+NixOS should have `hardware.graphics.enable = true` for GPU rendering. This
+package does not install or start the Rex server or the optional `rex` CLI used
+by Settings → Integrations. `nix flake check` builds the package and runs its
+unit and headless UI tests.
+
+### Cargo
+
 ```sh
 cargo build --locked --release --bin rex-linux
 ```
@@ -151,7 +198,7 @@ Each patch is meant to be dropped once the corresponding upstream release has eq
 
 Still needing hands-on validation: physical Wayland pointer gestures (move, edge resize, double-click, window menu), minimize on Wayland, multi-seat Wayland desktops, actual IME input, and sustained daily use. On X11, winit has no window-menu request, so right-clicking the drag region does nothing there.
 
-Not implemented: terminal-content search, complete Kitty graphics, accessibility (AT-SPI) and distribution packages.
+Not implemented: terminal-content search, complete Kitty graphics, accessibility (AT-SPI) and distribution packages other than the Nix flake above.
 
 ## Third-party software and assets
 
